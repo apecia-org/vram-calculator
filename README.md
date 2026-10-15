@@ -1,6 +1,6 @@
 # Open LLM Sizing Calculator
 
-> An independent, browser-based **VRAM and performance calculator** for LLM inference and fine-tuning, built from public equations and **validated against 43 live readings** of the ApX calculator. No server, no build, **no dependencies**.
+> An independent, browser-based **VRAM and performance calculator** for LLM inference and fine-tuning, built from public equations and **validated against 54 live readings** of the ApX calculator. No server, no build, **no dependencies**.
 
 <p align="center">
   <a href="https://github.com/apecia-org/vram-calculator/stargazers"><img src="https://img.shields.io/github/stars/apecia-org/vram-calculator?style=for-the-badge&logo=github&color=ffca28" alt="GitHub stars"></a>
@@ -13,7 +13,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/node-%E2%89%A518-339933?style=for-the-badge&logo=nodedotjs&logoColor=white" alt="Node 18+">
   <img src="https://img.shields.io/badge/dependencies-0-success?style=for-the-badge" alt="Zero dependencies">
-  <img src="https://img.shields.io/badge/tests-37%20passing-success?style=for-the-badge" alt="37 tests passing">
+  <img src="https://img.shields.io/badge/tests-38%20passing-success?style=for-the-badge" alt="37 tests passing">
   <img src="https://img.shields.io/badge/median%20decode%20error-2.3%25-blue?style=for-the-badge" alt="Median decode error 2.3%">
 </p>
 
@@ -55,8 +55,8 @@ Error is `|ours / ApX − 1|`. ApX readings are not ground truth: several are la
 |---|---:|---:|---:|
 | Decode tok/s (per user) | 38 | 2.3% | 11.1% |
 | TTFT | 38 | 4.8% | 12.7% |
-| VRAM per GPU | 31 | 0.7% | 3.7% |
-| Training tok/s | 4 | 1.0% | 1.1% |
+| VRAM per GPU | 42 | 1.0% | 4.2% |
+| Training tok/s | 11 | 0.9% | 2.2% |
 
 <sub>Reproduce with `npm run validate`. Raw readings: [`data/apx-readings.json`](./data/apx-readings.json).</sub>
 
@@ -163,13 +163,56 @@ Each cell reads `ApX → ours (difference)`.
 
 </details>
 
+<details>
+<summary><b>Fine-tuning, QLoRA on A100 40GB</b></summary>
+
+| Case | VRAM GiB (ApX → ours) | Training tok/s (ApX → ours) |
+|---|---|---|
+| QLoRA, batch 1 | 13.5 → 14.0 (+4%) | 3034 → 3026 (-0%) |
+| QLoRA, batch 2 | 19.5 → 20.0 (+3%) | 3338 → 3325 (-0%) |
+| QLoRA, batch 4 | 31.5 → 32.0 (+2%) | 3513 → 3499 (-0%) |
+
+</details>
+
+<details>
+<summary><b>Fine-tuning, QLoRA on RTX 4090 (ApX benchmark appears to use gradient checkpointing)</b></summary>
+
+| Case | VRAM GiB (ApX → ours) | Training tok/s (ApX → ours) |
+|---|---|---|
+| QLoRA, batch 1 | 7.2 → 7.5 (+3%) | 2292 → 2301 (+0%) |
+| QLoRA, batch 2 | 7.4 → 7.7 (+4%) | 2574 → 2584 (+0%) |
+
+</details>
+
+<details>
+<summary><b>ZeRO, full fine-tune Llama 3.1 8B, data parallel on RTX 4090 (PCIe 4.0)</b></summary>
+
+| Case | VRAM GiB (ApX → ours) | Training tok/s (ApX → ours) |
+|---|---|---|
+| 2 GPUs, ZeRO-1 | 84.5 → 82.0 (-3%) | — |
+| 4 GPUs, ZeRO-1 | 62.2 → 59.6 (-4%) | — |
+| 8 GPUs, ZeRO-1 | 51.2 → 48.4 (-6%) | — |
+| 8 GPUs, ZeRO-0 (no sharding) | 129 → 127 (-2%) | — |
+
+</details>
+
+<details>
+<summary><b>ZeRO, full fine-tune Llama 3.1 8B on H100 80GB (PCIe 4.0)</b></summary>
+
+| Case | VRAM GiB (ApX → ours) | Training tok/s (ApX → ours) |
+|---|---|---|
+| 4 GPUs, ZeRO-1 | 62.2 → 61.3 (-1%) | 7440 → 7600 (+2%) |
+| 8 GPUs, ZeRO-1 | 51.2 → 50.1 (-2%) | 8473 → 8056 (-5%) |
+
+</details>
+
 ### Coverage and known gaps
 
 | Area | Covered | Not covered yet |
 |---|---|---|
 | Models | Llama 3.1 8B / 70B, Mixtral 8x7B, DeepSeek-V3 | Dense models above 70B, VLMs, speculative decoding |
 | GPUs | RTX 4090, A100 40 GB, H100 PCIe/SXM | AMD, Apple silicon, H200 profile is **unmeasured** |
-| Fine-tuning | Llama 8B on one H100 (Full, LoRA, QLoRA) | Other GPUs, multi-GPU ZeRO |
+| Fine-tuning | Llama 8B: Full / LoRA / QLoRA on H100, QLoRA on A100 40 GB and RTX 4090, data-parallel ZeRO-0/1 on 2–8 GPUs | ZeRO-2/3 (ApX paywalls them), tensor-parallel training, models other than 8B |
 | Interconnect | PCIe 3.0/4.0, 10/100 GbE, 2-node TP8 | NVLink / NVSwitch |
 | Worst cases | DeepSeek-V3 decode (−17% / +22%), 8B TP8 decode (+11%) | — |
 
@@ -234,8 +277,8 @@ task.md                  → original working notes and formula list
 | Tensor parallel | `tp / (1 + loss·doublings)` plus an interconnect term relative to PCIe 4.0 |
 | Pipeline parallel | `1 + 0.03·(pp−1)` single-stream gain: stages run sequentially |
 | MoE | batch of B tokens reads `1 − (1 − active/total)^B` of the weights |
-| Fine-tuning | weights + gradients + 12 B/param AdamW states (ZeRO-sharded across data-parallel replicas) + activations + logits |
-| Training speed | `FLOPs·0.42 / (6·params) × B/(B+0.52)` |
+| Fine-tuning memory | weights + gradients + 12 B/param AdamW states (ZeRO-sharded across data-parallel replicas) + activations (layer inputs only with checkpointing) + logits |
+| Training speed | per replica `FLOPs·MFU/(6·params) × B/(B+k)` (MFU and k fitted per GPU), plus data-parallel gradient exchange `(dp−1)·grad bytes / (BW·2.1)` |
 
 The structural terms (weights, KV, FLOPs) come from published equations. The efficiency constants come from fitting ApX readings and are listed in `HEURISTICS` and `GPU_PRESETS`.
 
@@ -267,7 +310,8 @@ GPU presets carry fitted efficiency profiles. Override any field per call or in 
 | 2 | Calibrated decode, TTFT, batching, long context | ✅ Done |
 | 3 | Tensor/pipeline parallel, interconnects, multi-node | ✅ Done |
 | 4 | MoE, fine-tuning (Full/LoRA/QLoRA on H100) | ✅ Done |
-| 5 | Fine-tuning on other GPUs, multi-GPU ZeRO | ⏳ Planned |
+| 5 | Fine-tuning on other GPUs, data-parallel ZeRO-0/1 | ✅ Done |
+| 5b | ZeRO-2/3, tensor-parallel training, larger models | ⏳ Planned |
 | 6 | NVLink, Apple unified memory, speculative decoding | ⏳ Planned |
 | 7 | Parse Hugging Face `config.json` for exact architectures and LoRA module counts | ⏳ Planned |
 

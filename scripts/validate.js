@@ -11,7 +11,7 @@ const DEFAULTS = {
   latent: 512, rotary: 64, sequence: 1024, batch: 1, users: 1, prompt: 1024, loraRank: 16,
   gpus: 1, tp: 1, pp: 1, reserve: 0, metadata: 0, buffers: 0.3, computeEff: 0.75,
   precision: 'fp16', kvPrecision: 'fp16', ftMethod: 'full', optimizer: 'adamw', zero: '0',
-  runtime: 'generic', checkpoint: false, flash: true, gpusPerNode: 8, interconnectGBs: 64, interNodeGBs: 12.5,
+  runtime: 'generic', checkpoint: false, flash: true, gpusPerNode: 8, interconnectGBs: 64, interNodeGBs: 12.5, trainingMfu: 0.42, trainingBatchSaturation: 0.52,
 };
 
 function evaluate(row) {

@@ -17,14 +17,15 @@
     deepseek: { params: 671, activeParams: 37, layers: 61, hidden: 7168, attention: 'mla', kvHeads: 128, headDim: 128, latent: 512, rotary: 64 },
   };
 
+  // trainingMfu / trainingBatchSaturation: fitted to ApX QLoRA/LoRA readings (A100 40GB, H100, RTX 4090).
   // buffers: ApX reports ~1.7 GiB more framework memory on A100/H100 than on the 4090.
   // bwEff / layerOverheadUs are fitted to ApX readings (Llama 3.1 8B and 70B, decode):
   // GDDR consumer cards ~0.69 / 84 us per layer, HBM datacenter cards ~0.93 / 34 us per layer.
   const GPU_PRESETS = {
-    4090: { vram: 24, bandwidth: 1008, tflops: 165, bwEff: 0.69, layerOverheadUs: 84, buffers: 0.3 },
-    a100: { vram: 80, bandwidth: 2039, tflops: 312, bwEff: 0.93, layerOverheadUs: 34, buffers: 2.0 },
-    h100: { vram: 80, bandwidth: 3350, tflops: 989, bwEff: 0.93, layerOverheadUs: 34, buffers: 2.0 },
-    h200: { vram: 141, bandwidth: 4800, tflops: 989, bwEff: 0.93, layerOverheadUs: 34, buffers: 2.0 },
+    4090: { vram: 24, bandwidth: 1008, tflops: 165, bwEff: 0.69, layerOverheadUs: 84, buffers: 0.3, trainingMfu: 0.86, trainingBatchSaturation: 0.28 },
+    a100: { vram: 80, bandwidth: 2039, tflops: 312, bwEff: 0.93, layerOverheadUs: 34, buffers: 2.0, trainingMfu: 0.57, trainingBatchSaturation: 0.22 },
+    h100: { vram: 80, bandwidth: 3350, tflops: 989, bwEff: 0.93, layerOverheadUs: 34, buffers: 2.0, trainingMfu: 0.42, trainingBatchSaturation: 0.52 },
+    h200: { vram: 141, bandwidth: 4800, tflops: 989, bwEff: 0.93, layerOverheadUs: 34, buffers: 2.0, trainingMfu: 0.42, trainingBatchSaturation: 0.52 },
   };
 
   // bits per weight element and fractional metadata overhead (scales, zero points)
@@ -81,13 +82,14 @@
     trainingFrameworkGiB: 0.1,
     // Logits/loss buffers per token, assuming a ~128K vocabulary (fp32 logits + grad + bf16 copy).
     trainingLogitsGiBPerToken: 1.25 / 1024,
-    // Fit to ApX calibrated H100 HF-trainer readings: 5,729 tok/s at batch 1, 8,188 at batch 8 (8B).
-    trainingMfu: 0.42,
-    trainingBatchSaturation: 0.52,
+    // Data-parallel gradient exchange (ApX, 8B full fine-tune, PCIe 4.0): (dp-1) * grad bytes / (BW * 2.1).
+    trainingCommEfficiency: 2.1,
     lowPrecisionGradientBytes: 2,
     optimizerBytesPerParam: { adamw: 12, adam8: 6, sgd: 4 },
     activationFactor: { flash: 19, standard: 30 },
-    checkpointActivationScale: 0.4,
+    // Gradient checkpointing keeps layer inputs only (2 B per hidden unit); ApX's checkpointed runs
+    // behave like chunked cross-entropy, so logits stay a flat buffer instead of scaling with batch.
+    checkpointLogitsGiB: 0.9,
     trainingFlopsPerParamToken: 6,
   };
 
@@ -102,12 +104,13 @@
     if (m !== 'inference' && m !== 'training') throw Error('mode must be inference or training');
     const positive = POSITIVE_COMMON.slice();
     if (m === 'inference') positive.push('users', 'prompt');
+    if (m === 'training') positive.push('trainingBatchSaturation');
     if (m === 'training' && x.ftMethod !== 'full') positive.push('loraRank');
     if (x.attention === 'mla') positive.push('latent');
     for (const key of positive) if (!(x[key] > 0)) throw Error(key + ' must be positive');
     for (const key of INTEGERS) if (!Number.isInteger(x[key])) throw Error(key + ' must be a whole number');
     for (const key of ['reserve', 'buffers', 'metadata', 'rotary', 'layerOverheadUs', 'interconnectGBs', 'interNodeGBs']) if (!(x[key] >= 0)) throw Error(key + ' must not be negative');
-    for (const key of ['bwEff', 'computeEff']) if (!(x[key] > 0 && x[key] <= 1)) throw Error(key + ' must be in (0, 1]');
+    for (const key of ['bwEff', 'computeEff', ...(m === 'training' ? ['trainingMfu'] : [])]) if (!(x[key] > 0 && x[key] <= 1)) throw Error(key + ' must be in (0, 1]');
 
     const choices = { attention: ['mha', 'gqa', 'mla'], precision: Object.keys(FORMATS), runtime: Object.keys(HEURISTICS.runtimeBaseGiB) };
     if (m === 'inference') choices.kvPrecision = Object.keys(FORMATS);
@@ -216,10 +219,11 @@
     const gradShard = zero >= 2 ? replicas : 1;
     const weightShard = zero === 3 ? replicas : 1;
 
-    let activations = (((localBatch * x.sequence * x.layers * x.hidden * 2) / GiB) * (x.flash ? H.activationFactor.flash : H.activationFactor.standard)) / x.pp / x.tp;
-    if (x.checkpoint) activations *= H.checkpointActivationScale;
+    const perTokenPerLayer = x.hidden * 2;
+    let activations = (((localBatch * x.sequence * x.layers * perTokenPerLayer) / GiB) * (x.flash ? H.activationFactor.flash : H.activationFactor.standard)) / x.pp / x.tp;
+    if (x.checkpoint) activations = (localBatch * x.sequence * x.layers * perTokenPerLayer) / GiB / x.pp / x.tp;
 
-    const logits = (localBatch * x.sequence * H.trainingLogitsGiBPerToken) / x.tp;
+    const logits = x.checkpoint ? H.checkpointLogitsGiB : (localBatch * x.sequence * H.trainingLogitsGiBPerToken) / x.tp;
 
     return {
       'Model weights': weights / weightShard,
@@ -233,12 +237,29 @@
 
   function trainingPerformance(x, ctx) {
     const H = HEURISTICS;
+    const { localBatch, replicas, totalParams } = ctx;
     // 6 FLOPs/token/active parameter; LoRA still back-propagates through the frozen base.
     const flopsPerToken = H.trainingFlopsPerParamToken * x.activeParams * 1e9;
+    const devices = x.tp * (1 + H.ppSpeedupPerStage * (x.pp - 1));
     // Small per-device batches under-fill the GPU: efficiency saturates as B / (B + k).
-    const fill = ctx.localBatch / (ctx.localBatch + H.trainingBatchSaturation);
-    const tokensPerSecond = ((x.tflops * x.gpus * H.trainingMfu * 1e12) / flopsPerToken) * fill;
-    return { training_tps: tokensPerSecond, steps_per_second: tokensPerSecond / (x.batch * x.sequence), tokens_per_second: tokensPerSecond };
+    const fill = localBatch / (localBatch + x.trainingBatchSaturation);
+    const perReplicaTps = ((x.tflops * devices * x.trainingMfu * 1e12) / flopsPerToken) * fill;
+    const computeSeconds = (localBatch * x.sequence) / perReplicaTps;
+
+    // Data-parallel gradient exchange: full fine-tuning moves fp16 gradients for every parameter,
+    // LoRA/QLoRA only the adapters.
+    const full = x.ftMethod === 'full';
+    const gradGB = ((full ? totalParams : Math.min(totalParams, totalParams * H.loraTrainableFractionAtRank16 * (x.loraRank / 16))) * 2) / GB;
+    const bw = replicas > x.gpusPerNode ? 1 / (0.5 / x.interconnectGBs + 0.5 / x.interNodeGBs) : x.interconnectGBs;
+    const commSeconds = replicas > 1 ? ((replicas - 1) * gradGB) / (bw * H.trainingCommEfficiency) : 0;
+
+    const tokensPerSecond = (replicas * localBatch * x.sequence) / (computeSeconds + commSeconds);
+    return {
+      training_tps: tokensPerSecond,
+      steps_per_second: tokensPerSecond / (x.batch * x.sequence),
+      tokens_per_second: tokensPerSecond,
+      comm_seconds_per_step: commSeconds,
+    };
   }
 
   function classify(pct) {

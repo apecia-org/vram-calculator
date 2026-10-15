@@ -4,7 +4,7 @@ const { calculate, PRESETS, GPU_PRESETS } = window.LLMSizing;
 
 const $ = (id) => document.getElementById(id);
 const palette = ['#618cfa', '#56c9a8', '#f4b36a', '#b18bea', '#eb7c90', '#73c4d8'];
-const NUMBER_IDS = ['params', 'activeParams', 'layers', 'hidden', 'kvHeads', 'headDim', 'latent', 'rotary', 'sequence', 'batch', 'users', 'prompt', 'loraRank', 'vram', 'bandwidth', 'tflops', 'gpus', 'tp', 'pp', 'reserve', 'metadata', 'buffers', 'bwEff', 'computeEff', 'layerOverheadUs', 'gpusPerNode', 'interconnectGBs', 'interNodeGBs'];
+const NUMBER_IDS = ['params', 'activeParams', 'layers', 'hidden', 'kvHeads', 'headDim', 'latent', 'rotary', 'sequence', 'batch', 'users', 'prompt', 'loraRank', 'vram', 'bandwidth', 'tflops', 'gpus', 'tp', 'pp', 'reserve', 'metadata', 'buffers', 'bwEff', 'computeEff', 'layerOverheadUs', 'gpusPerNode', 'interconnectGBs', 'interNodeGBs', 'trainingMfu', 'trainingBatchSaturation'];
 const SELECT_IDS = ['attention', 'precision', 'kvPrecision', 'ftMethod', 'optimizer', 'zero', 'runtime', 'model', 'gpu'];
 const CHECK_IDS = ['checkpoint', 'flash'];
 
@@ -30,7 +30,7 @@ function setMode(next) {
 
 function applyPreset(table, key) {
   const preset = table[key];
-  if (preset) for (const [k, v] of Object.entries(preset)) $(k).value = v;
+  if (preset) for (const [k, v] of Object.entries(preset)) if ($(k)) $(k).value = v;
   update();
 }
 const applyModel = () => applyPreset(PRESETS, $('model').value);

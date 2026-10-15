@@ -2,60 +2,775 @@
   "source": "https://apxml.com/tools/vram-calculator (v4.2, read manually, Oct 2026)",
   "notes": "Per-user tok/s, TTFT in ms, VRAM in GB per GPU as displayed by ApX. 1,024-token context, FP16 KV cache, batch 1, 1 user unless stated.",
   "models": {
-    "llama8":   { "params": 8.03, "activeParams": 8.03, "layers": 32, "hidden": 4096, "attention": "gqa", "kvHeads": 8, "headDim": 128 },
-    "llama70":  { "params": 70.55, "activeParams": 70.55, "layers": 80, "hidden": 8192, "attention": "gqa", "kvHeads": 8, "headDim": 128 },
-    "mixtral":  { "params": 46.7, "activeParams": 7, "layers": 32, "hidden": 4096, "attention": "gqa", "kvHeads": 8, "headDim": 128 },
-    "deepseek": { "params": 671, "activeParams": 37, "layers": 61, "hidden": 7168, "attention": "mla", "kvHeads": 128, "headDim": 128, "latent": 512, "rotary": 64 }
+    "llama8": {
+      "params": 8.03,
+      "activeParams": 8.03,
+      "layers": 32,
+      "hidden": 4096,
+      "attention": "gqa",
+      "kvHeads": 8,
+      "headDim": 128
+    },
+    "llama70": {
+      "params": 70.55,
+      "activeParams": 70.55,
+      "layers": 80,
+      "hidden": 8192,
+      "attention": "gqa",
+      "kvHeads": 8,
+      "headDim": 128
+    },
+    "mixtral": {
+      "params": 46.7,
+      "activeParams": 7,
+      "layers": 32,
+      "hidden": 4096,
+      "attention": "gqa",
+      "kvHeads": 8,
+      "headDim": 128
+    },
+    "deepseek": {
+      "params": 671,
+      "activeParams": 37,
+      "layers": 61,
+      "hidden": 7168,
+      "attention": "mla",
+      "kvHeads": 128,
+      "headDim": 128,
+      "latent": 512,
+      "rotary": 64
+    }
   },
   "gpus": {
-    "rtx4090":  { "preset": "4090", "vram": 24, "bandwidth": 1008, "tflops": 165 },
-    "a100_40":  { "preset": "a100", "vram": 40, "bandwidth": 1555, "tflops": 312 },
-    "h100_pcie":{ "preset": "h100", "vram": 80, "bandwidth": 2000, "tflops": 756 },
-    "h100_sxm": { "preset": "h100", "vram": 80, "bandwidth": 3350, "tflops": 989.5 }
+    "rtx4090": {
+      "preset": "4090",
+      "vram": 24,
+      "bandwidth": 1008,
+      "tflops": 165
+    },
+    "a100_40": {
+      "preset": "a100",
+      "vram": 40,
+      "bandwidth": 1555,
+      "tflops": 312
+    },
+    "h100_pcie": {
+      "preset": "h100",
+      "vram": 80,
+      "bandwidth": 2000,
+      "tflops": 756
+    },
+    "h100_sxm": {
+      "preset": "h100",
+      "vram": 80,
+      "bandwidth": 3350,
+      "tflops": 989.5
+    }
   },
   "rows": [
-    { "group": "Single-GPU decode, 8B", "label": "4090 FP16",          "model": "llama8", "gpu": "rtx4090", "precision": "fp16", "tps": 38,  "ttft": 168, "gib": 15.9 },
-    { "group": "Single-GPU decode, 8B", "label": "4090 INT4",          "model": "llama8", "gpu": "rtx4090", "precision": "int4", "tps": 111, "ttft": 150, "gib": 4.9 },
-    { "group": "Single-GPU decode, 8B", "label": "4090 INT4 batch 8, 8 users", "model": "llama8", "gpu": "rtx4090", "precision": "int4", "cfg": { "batch": 8, "users": 8 }, "tps": 67, "ttft": 156, "gib": 5.8 },
-    { "group": "Single-GPU decode, 8B", "label": "H100 PCIe FP16",     "model": "llama8", "gpu": "h100_pcie", "precision": "fp16", "tps": 99,  "ttft": 42, "gib": 17.6 },
-    { "group": "Single-GPU decode, 8B", "label": "H100 PCIe FP8",      "model": "llama8", "gpu": "h100_pcie", "precision": "fp8",  "tps": 179, "ttft": 25, "gib": 10.3 },
-    { "group": "Single-GPU decode, 8B", "label": "H100 PCIe INT8",     "model": "llama8", "gpu": "h100_pcie", "precision": "int8", "tps": 179, "ttft": 38, "gib": 10.3 },
-    { "group": "Single-GPU decode, 8B", "label": "H100 PCIe INT4",     "model": "llama8", "gpu": "h100_pcie", "precision": "int4", "tps": 283, "ttft": 36, "gib": 6.7 },
-    { "group": "Single-GPU decode, 8B", "label": "H100 SXM FP16",      "model": "llama8", "gpu": "h100_sxm", "precision": "fp16", "tps": 156, "ttft": 33, "gib": 17.6 },
-    { "group": "Single-GPU decode, 8B", "label": "H100 SXM INT8",      "model": "llama8", "gpu": "h100_sxm", "precision": "int8", "tps": 268, "ttft": 30, "gib": 10.3 },
-    { "group": "Single-GPU decode, 8B", "label": "H100 SXM INT4",      "model": "llama8", "gpu": "h100_sxm", "precision": "int4", "tps": 398, "ttft": 29, "gib": 6.7 },
-    { "group": "Single-GPU decode, 8B", "label": "A100 40GB FP16",     "model": "llama8", "gpu": "a100_40", "precision": "fp16", "tps": 79,  "ttft": 81, "gib": 17.6 },
-    { "group": "Single-GPU decode, 8B", "label": "A100 40GB INT8",     "model": "llama8", "gpu": "a100_40", "precision": "int8", "tps": 145, "ttft": 75, "gib": 10.3 },
-    { "group": "Single-GPU decode, 8B", "label": "A100 40GB INT4",     "model": "llama8", "gpu": "a100_40", "precision": "int4", "tps": 235, "ttft": 72, "gib": 6.7 },
-    { "group": "Batching, 8B on A100 40GB", "label": "FP16 batch 8",   "model": "llama8", "gpu": "a100_40", "precision": "fp16", "cfg": { "batch": 8, "users": 8 }, "tps": 69,  "ttft": 82, "gib": 18.4 },
-    { "group": "Batching, 8B on A100 40GB", "label": "INT8 batch 8",   "model": "llama8", "gpu": "a100_40", "precision": "int8", "cfg": { "batch": 8, "users": 8 }, "tps": 114, "ttft": 77, "gib": 11.2 },
-    { "group": "Batching, 8B on A100 40GB", "label": "INT4 batch 8",   "model": "llama8", "gpu": "a100_40", "precision": "int4", "cfg": { "batch": 8, "users": 8 }, "tps": 153, "ttft": 75, "gib": 7.6 },
-    { "group": "Long context, 8B FP16 on A100 40GB", "label": "8K tokens",  "model": "llama8", "gpu": "a100_40", "precision": "fp16", "cfg": { "sequence": 8192,  "prompt": 8192 },  "tps": 75, "ttft": 565,  "gib": 18.5 },
-    { "group": "Long context, 8B FP16 on A100 40GB", "label": "32K tokens", "model": "llama8", "gpu": "a100_40", "precision": "fp16", "cfg": { "sequence": 32768, "prompt": 32768 }, "tps": 64, "ttft": 2970, "gib": 21.5 },
-    { "group": "Long context, 8B FP16 on A100 40GB", "label": "64K tokens", "model": "llama8", "gpu": "a100_40", "precision": "fp16", "cfg": { "sequence": 65536, "prompt": 65536 }, "tps": 53, "ttft": 7990, "gib": 25.5 },
-    { "group": "Multi-GPU, 70B INT4 on A100 40GB (PCIe 4.0)", "label": "1 GPU",  "model": "llama70", "gpu": "a100_40", "precision": "int4", "tps": 31,  "ttft": 671, "gib": 36.6 },
-    { "group": "Multi-GPU, 70B INT4 on A100 40GB (PCIe 4.0)", "label": "TP2",    "model": "llama70", "gpu": "a100_40", "precision": "int4", "cfg": { "gpus": 2, "tp": 2 }, "tps": 62,  "ttft": 339, "gib": 21.0 },
-    { "group": "Multi-GPU, 70B INT4 on A100 40GB (PCIe 4.0)", "label": "TP4",    "model": "llama70", "gpu": "a100_40", "precision": "int4", "cfg": { "gpus": 4, "tp": 4 }, "tps": 96,  "ttft": 208, "gib": 12.5 },
-    { "group": "Multi-GPU, 70B INT4 on A100 40GB (PCIe 4.0)", "label": "TP8",    "model": "llama70", "gpu": "a100_40", "precision": "int4", "cfg": { "gpus": 8, "tp": 8 }, "tps": 138, "ttft": 140, "gib": 8.2 },
-    { "group": "Multi-GPU, 70B INT4 on A100 40GB (PCIe 4.0)", "label": "PP4",    "model": "llama70", "gpu": "a100_40", "precision": "int4", "cfg": { "gpus": 4, "pp": 4 }, "tps": 34,  "ttft": 575, "gib": 12.9 },
-    { "group": "Multi-GPU, 70B INT4 on A100 40GB (PCIe 4.0)", "label": "TP2 × PP4", "model": "llama70", "gpu": "a100_40", "precision": "int4", "cfg": { "gpus": 8, "tp": 2, "pp": 4 }, "tps": 60, "ttft": 339, "gib": 8.5 },
-    { "group": "Interconnect, TP8 on 8× A100 40GB", "label": "8B, PCIe 4.0 (64 GB/s)",  "model": "llama8",  "gpu": "a100_40", "precision": "int4", "cfg": { "gpus": 8, "tp": 8, "interconnectGBs": 64 },   "tps": 579, "ttft": 27 },
-    { "group": "Interconnect, TP8 on 8× A100 40GB", "label": "8B, PCIe 3.0 (32 GB/s)",  "model": "llama8",  "gpu": "a100_40", "precision": "int4", "cfg": { "gpus": 8, "tp": 8, "interconnectGBs": 32 },   "tps": 534, "ttft": 36 },
-    { "group": "Interconnect, TP8 on 8× A100 40GB", "label": "8B, 100 GbE (12.5 GB/s)", "model": "llama8",  "gpu": "a100_40", "precision": "int4", "cfg": { "gpus": 8, "tp": 8, "interconnectGBs": 12.5 }, "tps": 383, "ttft": 50 },
-    { "group": "Interconnect, TP8 on 8× A100 40GB", "label": "8B, 10 GbE (1.25 GB/s)",  "model": "llama8",  "gpu": "a100_40", "precision": "int4", "cfg": { "gpus": 8, "tp": 8, "interconnectGBs": 1.25 }, "tps": 17,  "ttft": 315 },
-    { "group": "Interconnect, TP8 on 8× A100 40GB", "label": "70B, 100 GbE (12.5 GB/s)", "model": "llama70", "gpu": "a100_40", "precision": "int4", "cfg": { "gpus": 8, "tp": 8, "interconnectGBs": 12.5 }, "tps": 68, "ttft": 240 },
-    { "group": "Interconnect, TP8 on 8× A100 40GB", "label": "70B, 10 GbE (1.25 GB/s)",  "model": "llama70", "gpu": "a100_40", "precision": "int4", "cfg": { "gpus": 8, "tp": 8, "interconnectGBs": 1.25 }, "tps": 2,  "ttft": 1700 },
-    { "group": "Interconnect, TP8 on 8× A100 40GB", "label": "70B TP4, 100 GbE", "model": "llama70", "gpu": "a100_40", "precision": "int4", "cfg": { "gpus": 4, "tp": 4, "interconnectGBs": 12.5 }, "tps": 74, "ttft": 291 },
-    { "group": "Interconnect, TP8 on 8× A100 40GB", "label": "70B TP2, 100 GbE", "model": "llama70", "gpu": "a100_40", "precision": "int4", "cfg": { "gpus": 2, "tp": 2, "interconnectGBs": 12.5 }, "tps": 56, "ttft": 401 },
-    { "group": "Interconnect, TP8 on 8× A100 40GB", "label": "70B, 2 nodes × 4 GPUs, PCIe 4.0 + 100 GbE", "model": "llama70", "gpu": "a100_40", "precision": "int4", "cfg": { "gpus": 8, "tp": 8, "gpusPerNode": 4, "interconnectGBs": 64, "interNodeGBs": 12.5 }, "tps": 101, "ttft": 229 },
-    { "group": "Mixture of experts", "label": "Mixtral 8x7B INT4, 1× A100 40GB, batch 1", "model": "mixtral", "gpu": "a100_40", "precision": "int4", "tps": 259, "ttft": 64, "gib": 25.1 },
-    { "group": "Mixture of experts", "label": "Mixtral 8x7B INT4, 1× A100 40GB, batch 8", "model": "mixtral", "gpu": "a100_40", "precision": "int4", "cfg": { "batch": 8 }, "tps": 70, "ttft": 449 },
-    { "group": "Mixture of experts", "label": "DeepSeek-V3 INT4, 8× H100, TP8, batch 1", "model": "deepseek", "gpu": "h100_sxm", "precision": "int4", "cfg": { "gpus": 8, "tp": 8 }, "tps": 397, "ttft": 54 },
-    { "group": "Mixture of experts", "label": "DeepSeek-V3 INT4, 8× H100, TP8, batch 8", "model": "deepseek", "gpu": "h100_sxm", "precision": "int4", "cfg": { "gpus": 8, "tp": 8, "batch": 8 }, "tps": 97, "ttft": 325 },
-    { "group": "Fine-tuning, Llama 3.1 8B on H100 80GB", "mode": "training", "label": "Full FP16, batch 1",  "model": "llama8", "gpu": "h100_sxm", "cfg": { "ftMethod": "full", "runtime": "hf" }, "gib": 128.5 },
-    { "group": "Fine-tuning, Llama 3.1 8B on H100 80GB", "mode": "training", "label": "LoRA r16, batch 1",   "model": "llama8", "gpu": "h100_sxm", "cfg": { "ftMethod": "lora", "runtime": "hf" }, "gib": 24.2, "train_tps": 5729 },
-    { "group": "Fine-tuning, Llama 3.1 8B on H100 80GB", "mode": "training", "label": "LoRA r16, batch 8",   "model": "llama8", "gpu": "h100_sxm", "cfg": { "ftMethod": "lora", "runtime": "hf", "batch": 8 }, "gib": 66.4, "train_tps": 8188 },
-    { "group": "Fine-tuning, Llama 3.1 8B on H100 80GB", "mode": "training", "label": "QLoRA, batch 1",      "model": "llama8", "gpu": "h100_sxm", "cfg": { "ftMethod": "qlora", "runtime": "hf" }, "gib": 13.5, "train_tps": 5729 },
-    { "group": "Fine-tuning, Llama 3.1 8B on H100 80GB", "mode": "training", "label": "QLoRA, batch 8",      "model": "llama8", "gpu": "h100_sxm", "cfg": { "ftMethod": "qlora", "runtime": "hf", "batch": 8 }, "gib": 55.6, "train_tps": 8188 }
+    {
+      "group": "Single-GPU decode, 8B",
+      "label": "4090 FP16",
+      "model": "llama8",
+      "gpu": "rtx4090",
+      "precision": "fp16",
+      "tps": 38,
+      "ttft": 168,
+      "gib": 15.9
+    },
+    {
+      "group": "Single-GPU decode, 8B",
+      "label": "4090 INT4",
+      "model": "llama8",
+      "gpu": "rtx4090",
+      "precision": "int4",
+      "tps": 111,
+      "ttft": 150,
+      "gib": 4.9
+    },
+    {
+      "group": "Single-GPU decode, 8B",
+      "label": "4090 INT4 batch 8, 8 users",
+      "model": "llama8",
+      "gpu": "rtx4090",
+      "precision": "int4",
+      "cfg": {
+        "batch": 8,
+        "users": 8
+      },
+      "tps": 67,
+      "ttft": 156,
+      "gib": 5.8
+    },
+    {
+      "group": "Single-GPU decode, 8B",
+      "label": "H100 PCIe FP16",
+      "model": "llama8",
+      "gpu": "h100_pcie",
+      "precision": "fp16",
+      "tps": 99,
+      "ttft": 42,
+      "gib": 17.6
+    },
+    {
+      "group": "Single-GPU decode, 8B",
+      "label": "H100 PCIe FP8",
+      "model": "llama8",
+      "gpu": "h100_pcie",
+      "precision": "fp8",
+      "tps": 179,
+      "ttft": 25,
+      "gib": 10.3
+    },
+    {
+      "group": "Single-GPU decode, 8B",
+      "label": "H100 PCIe INT8",
+      "model": "llama8",
+      "gpu": "h100_pcie",
+      "precision": "int8",
+      "tps": 179,
+      "ttft": 38,
+      "gib": 10.3
+    },
+    {
+      "group": "Single-GPU decode, 8B",
+      "label": "H100 PCIe INT4",
+      "model": "llama8",
+      "gpu": "h100_pcie",
+      "precision": "int4",
+      "tps": 283,
+      "ttft": 36,
+      "gib": 6.7
+    },
+    {
+      "group": "Single-GPU decode, 8B",
+      "label": "H100 SXM FP16",
+      "model": "llama8",
+      "gpu": "h100_sxm",
+      "precision": "fp16",
+      "tps": 156,
+      "ttft": 33,
+      "gib": 17.6
+    },
+    {
+      "group": "Single-GPU decode, 8B",
+      "label": "H100 SXM INT8",
+      "model": "llama8",
+      "gpu": "h100_sxm",
+      "precision": "int8",
+      "tps": 268,
+      "ttft": 30,
+      "gib": 10.3
+    },
+    {
+      "group": "Single-GPU decode, 8B",
+      "label": "H100 SXM INT4",
+      "model": "llama8",
+      "gpu": "h100_sxm",
+      "precision": "int4",
+      "tps": 398,
+      "ttft": 29,
+      "gib": 6.7
+    },
+    {
+      "group": "Single-GPU decode, 8B",
+      "label": "A100 40GB FP16",
+      "model": "llama8",
+      "gpu": "a100_40",
+      "precision": "fp16",
+      "tps": 79,
+      "ttft": 81,
+      "gib": 17.6
+    },
+    {
+      "group": "Single-GPU decode, 8B",
+      "label": "A100 40GB INT8",
+      "model": "llama8",
+      "gpu": "a100_40",
+      "precision": "int8",
+      "tps": 145,
+      "ttft": 75,
+      "gib": 10.3
+    },
+    {
+      "group": "Single-GPU decode, 8B",
+      "label": "A100 40GB INT4",
+      "model": "llama8",
+      "gpu": "a100_40",
+      "precision": "int4",
+      "tps": 235,
+      "ttft": 72,
+      "gib": 6.7
+    },
+    {
+      "group": "Batching, 8B on A100 40GB",
+      "label": "FP16 batch 8",
+      "model": "llama8",
+      "gpu": "a100_40",
+      "precision": "fp16",
+      "cfg": {
+        "batch": 8,
+        "users": 8
+      },
+      "tps": 69,
+      "ttft": 82,
+      "gib": 18.4
+    },
+    {
+      "group": "Batching, 8B on A100 40GB",
+      "label": "INT8 batch 8",
+      "model": "llama8",
+      "gpu": "a100_40",
+      "precision": "int8",
+      "cfg": {
+        "batch": 8,
+        "users": 8
+      },
+      "tps": 114,
+      "ttft": 77,
+      "gib": 11.2
+    },
+    {
+      "group": "Batching, 8B on A100 40GB",
+      "label": "INT4 batch 8",
+      "model": "llama8",
+      "gpu": "a100_40",
+      "precision": "int4",
+      "cfg": {
+        "batch": 8,
+        "users": 8
+      },
+      "tps": 153,
+      "ttft": 75,
+      "gib": 7.6
+    },
+    {
+      "group": "Long context, 8B FP16 on A100 40GB",
+      "label": "8K tokens",
+      "model": "llama8",
+      "gpu": "a100_40",
+      "precision": "fp16",
+      "cfg": {
+        "sequence": 8192,
+        "prompt": 8192
+      },
+      "tps": 75,
+      "ttft": 565,
+      "gib": 18.5
+    },
+    {
+      "group": "Long context, 8B FP16 on A100 40GB",
+      "label": "32K tokens",
+      "model": "llama8",
+      "gpu": "a100_40",
+      "precision": "fp16",
+      "cfg": {
+        "sequence": 32768,
+        "prompt": 32768
+      },
+      "tps": 64,
+      "ttft": 2970,
+      "gib": 21.5
+    },
+    {
+      "group": "Long context, 8B FP16 on A100 40GB",
+      "label": "64K tokens",
+      "model": "llama8",
+      "gpu": "a100_40",
+      "precision": "fp16",
+      "cfg": {
+        "sequence": 65536,
+        "prompt": 65536
+      },
+      "tps": 53,
+      "ttft": 7990,
+      "gib": 25.5
+    },
+    {
+      "group": "Multi-GPU, 70B INT4 on A100 40GB (PCIe 4.0)",
+      "label": "1 GPU",
+      "model": "llama70",
+      "gpu": "a100_40",
+      "precision": "int4",
+      "tps": 31,
+      "ttft": 671,
+      "gib": 36.6
+    },
+    {
+      "group": "Multi-GPU, 70B INT4 on A100 40GB (PCIe 4.0)",
+      "label": "TP2",
+      "model": "llama70",
+      "gpu": "a100_40",
+      "precision": "int4",
+      "cfg": {
+        "gpus": 2,
+        "tp": 2
+      },
+      "tps": 62,
+      "ttft": 339,
+      "gib": 21.0
+    },
+    {
+      "group": "Multi-GPU, 70B INT4 on A100 40GB (PCIe 4.0)",
+      "label": "TP4",
+      "model": "llama70",
+      "gpu": "a100_40",
+      "precision": "int4",
+      "cfg": {
+        "gpus": 4,
+        "tp": 4
+      },
+      "tps": 96,
+      "ttft": 208,
+      "gib": 12.5
+    },
+    {
+      "group": "Multi-GPU, 70B INT4 on A100 40GB (PCIe 4.0)",
+      "label": "TP8",
+      "model": "llama70",
+      "gpu": "a100_40",
+      "precision": "int4",
+      "cfg": {
+        "gpus": 8,
+        "tp": 8
+      },
+      "tps": 138,
+      "ttft": 140,
+      "gib": 8.2
+    },
+    {
+      "group": "Multi-GPU, 70B INT4 on A100 40GB (PCIe 4.0)",
+      "label": "PP4",
+      "model": "llama70",
+      "gpu": "a100_40",
+      "precision": "int4",
+      "cfg": {
+        "gpus": 4,
+        "pp": 4
+      },
+      "tps": 34,
+      "ttft": 575,
+      "gib": 12.9
+    },
+    {
+      "group": "Multi-GPU, 70B INT4 on A100 40GB (PCIe 4.0)",
+      "label": "TP2 \u00d7 PP4",
+      "model": "llama70",
+      "gpu": "a100_40",
+      "precision": "int4",
+      "cfg": {
+        "gpus": 8,
+        "tp": 2,
+        "pp": 4
+      },
+      "tps": 60,
+      "ttft": 339,
+      "gib": 8.5
+    },
+    {
+      "group": "Interconnect, TP8 on 8\u00d7 A100 40GB",
+      "label": "8B, PCIe 4.0 (64 GB/s)",
+      "model": "llama8",
+      "gpu": "a100_40",
+      "precision": "int4",
+      "cfg": {
+        "gpus": 8,
+        "tp": 8,
+        "interconnectGBs": 64
+      },
+      "tps": 579,
+      "ttft": 27
+    },
+    {
+      "group": "Interconnect, TP8 on 8\u00d7 A100 40GB",
+      "label": "8B, PCIe 3.0 (32 GB/s)",
+      "model": "llama8",
+      "gpu": "a100_40",
+      "precision": "int4",
+      "cfg": {
+        "gpus": 8,
+        "tp": 8,
+        "interconnectGBs": 32
+      },
+      "tps": 534,
+      "ttft": 36
+    },
+    {
+      "group": "Interconnect, TP8 on 8\u00d7 A100 40GB",
+      "label": "8B, 100 GbE (12.5 GB/s)",
+      "model": "llama8",
+      "gpu": "a100_40",
+      "precision": "int4",
+      "cfg": {
+        "gpus": 8,
+        "tp": 8,
+        "interconnectGBs": 12.5
+      },
+      "tps": 383,
+      "ttft": 50
+    },
+    {
+      "group": "Interconnect, TP8 on 8\u00d7 A100 40GB",
+      "label": "8B, 10 GbE (1.25 GB/s)",
+      "model": "llama8",
+      "gpu": "a100_40",
+      "precision": "int4",
+      "cfg": {
+        "gpus": 8,
+        "tp": 8,
+        "interconnectGBs": 1.25
+      },
+      "tps": 17,
+      "ttft": 315
+    },
+    {
+      "group": "Interconnect, TP8 on 8\u00d7 A100 40GB",
+      "label": "70B, 100 GbE (12.5 GB/s)",
+      "model": "llama70",
+      "gpu": "a100_40",
+      "precision": "int4",
+      "cfg": {
+        "gpus": 8,
+        "tp": 8,
+        "interconnectGBs": 12.5
+      },
+      "tps": 68,
+      "ttft": 240
+    },
+    {
+      "group": "Interconnect, TP8 on 8\u00d7 A100 40GB",
+      "label": "70B, 10 GbE (1.25 GB/s)",
+      "model": "llama70",
+      "gpu": "a100_40",
+      "precision": "int4",
+      "cfg": {
+        "gpus": 8,
+        "tp": 8,
+        "interconnectGBs": 1.25
+      },
+      "tps": 2,
+      "ttft": 1700
+    },
+    {
+      "group": "Interconnect, TP8 on 8\u00d7 A100 40GB",
+      "label": "70B TP4, 100 GbE",
+      "model": "llama70",
+      "gpu": "a100_40",
+      "precision": "int4",
+      "cfg": {
+        "gpus": 4,
+        "tp": 4,
+        "interconnectGBs": 12.5
+      },
+      "tps": 74,
+      "ttft": 291
+    },
+    {
+      "group": "Interconnect, TP8 on 8\u00d7 A100 40GB",
+      "label": "70B TP2, 100 GbE",
+      "model": "llama70",
+      "gpu": "a100_40",
+      "precision": "int4",
+      "cfg": {
+        "gpus": 2,
+        "tp": 2,
+        "interconnectGBs": 12.5
+      },
+      "tps": 56,
+      "ttft": 401
+    },
+    {
+      "group": "Interconnect, TP8 on 8\u00d7 A100 40GB",
+      "label": "70B, 2 nodes \u00d7 4 GPUs, PCIe 4.0 + 100 GbE",
+      "model": "llama70",
+      "gpu": "a100_40",
+      "precision": "int4",
+      "cfg": {
+        "gpus": 8,
+        "tp": 8,
+        "gpusPerNode": 4,
+        "interconnectGBs": 64,
+        "interNodeGBs": 12.5
+      },
+      "tps": 101,
+      "ttft": 229
+    },
+    {
+      "group": "Mixture of experts",
+      "label": "Mixtral 8x7B INT4, 1\u00d7 A100 40GB, batch 1",
+      "model": "mixtral",
+      "gpu": "a100_40",
+      "precision": "int4",
+      "tps": 259,
+      "ttft": 64,
+      "gib": 25.1
+    },
+    {
+      "group": "Mixture of experts",
+      "label": "Mixtral 8x7B INT4, 1\u00d7 A100 40GB, batch 8",
+      "model": "mixtral",
+      "gpu": "a100_40",
+      "precision": "int4",
+      "cfg": {
+        "batch": 8
+      },
+      "tps": 70,
+      "ttft": 449
+    },
+    {
+      "group": "Mixture of experts",
+      "label": "DeepSeek-V3 INT4, 8\u00d7 H100, TP8, batch 1",
+      "model": "deepseek",
+      "gpu": "h100_sxm",
+      "precision": "int4",
+      "cfg": {
+        "gpus": 8,
+        "tp": 8
+      },
+      "tps": 397,
+      "ttft": 54
+    },
+    {
+      "group": "Mixture of experts",
+      "label": "DeepSeek-V3 INT4, 8\u00d7 H100, TP8, batch 8",
+      "model": "deepseek",
+      "gpu": "h100_sxm",
+      "precision": "int4",
+      "cfg": {
+        "gpus": 8,
+        "tp": 8,
+        "batch": 8
+      },
+      "tps": 97,
+      "ttft": 325
+    },
+    {
+      "group": "Fine-tuning, Llama 3.1 8B on H100 80GB",
+      "mode": "training",
+      "label": "Full FP16, batch 1",
+      "model": "llama8",
+      "gpu": "h100_sxm",
+      "cfg": {
+        "ftMethod": "full",
+        "runtime": "hf"
+      },
+      "gib": 128.5
+    },
+    {
+      "group": "Fine-tuning, Llama 3.1 8B on H100 80GB",
+      "mode": "training",
+      "label": "LoRA r16, batch 1",
+      "model": "llama8",
+      "gpu": "h100_sxm",
+      "cfg": {
+        "ftMethod": "lora",
+        "runtime": "hf"
+      },
+      "gib": 24.2,
+      "train_tps": 5729
+    },
+    {
+      "group": "Fine-tuning, Llama 3.1 8B on H100 80GB",
+      "mode": "training",
+      "label": "LoRA r16, batch 8",
+      "model": "llama8",
+      "gpu": "h100_sxm",
+      "cfg": {
+        "ftMethod": "lora",
+        "runtime": "hf",
+        "batch": 8
+      },
+      "gib": 66.4,
+      "train_tps": 8188
+    },
+    {
+      "group": "Fine-tuning, Llama 3.1 8B on H100 80GB",
+      "mode": "training",
+      "label": "QLoRA, batch 1",
+      "model": "llama8",
+      "gpu": "h100_sxm",
+      "cfg": {
+        "ftMethod": "qlora",
+        "runtime": "hf"
+      },
+      "gib": 13.5,
+      "train_tps": 5729
+    },
+    {
+      "group": "Fine-tuning, Llama 3.1 8B on H100 80GB",
+      "mode": "training",
+      "label": "QLoRA, batch 8",
+      "model": "llama8",
+      "gpu": "h100_sxm",
+      "cfg": {
+        "ftMethod": "qlora",
+        "runtime": "hf",
+        "batch": 8
+      },
+      "gib": 55.6,
+      "train_tps": 8188
+    },
+    {
+      "group": "Fine-tuning, QLoRA on A100 40GB",
+      "mode": "training",
+      "label": "QLoRA, batch 1",
+      "model": "llama8",
+      "gpu": "a100_40",
+      "cfg": {
+        "ftMethod": "qlora",
+        "runtime": "hf"
+      },
+      "gib": 13.5,
+      "train_tps": 3034
+    },
+    {
+      "group": "Fine-tuning, QLoRA on A100 40GB",
+      "mode": "training",
+      "label": "QLoRA, batch 2",
+      "model": "llama8",
+      "gpu": "a100_40",
+      "cfg": {
+        "ftMethod": "qlora",
+        "runtime": "hf",
+        "batch": 2
+      },
+      "gib": 19.5,
+      "train_tps": 3338
+    },
+    {
+      "group": "Fine-tuning, QLoRA on A100 40GB",
+      "mode": "training",
+      "label": "QLoRA, batch 4",
+      "model": "llama8",
+      "gpu": "a100_40",
+      "cfg": {
+        "ftMethod": "qlora",
+        "runtime": "hf",
+        "batch": 4
+      },
+      "gib": 31.5,
+      "train_tps": 3513
+    },
+    {
+      "group": "Fine-tuning, QLoRA on RTX 4090 (ApX benchmark appears to use gradient checkpointing)",
+      "mode": "training",
+      "label": "QLoRA, batch 1",
+      "model": "llama8",
+      "gpu": "rtx4090",
+      "cfg": {
+        "ftMethod": "qlora",
+        "runtime": "hf",
+        "checkpoint": true
+      },
+      "gib": 7.2,
+      "train_tps": 2292
+    },
+    {
+      "group": "Fine-tuning, QLoRA on RTX 4090 (ApX benchmark appears to use gradient checkpointing)",
+      "mode": "training",
+      "label": "QLoRA, batch 2",
+      "model": "llama8",
+      "gpu": "rtx4090",
+      "cfg": {
+        "ftMethod": "qlora",
+        "runtime": "hf",
+        "checkpoint": true,
+        "batch": 2
+      },
+      "gib": 7.4,
+      "train_tps": 2574
+    },
+    {
+      "group": "ZeRO, full fine-tune Llama 3.1 8B, data parallel on RTX 4090 (PCIe 4.0)",
+      "mode": "training",
+      "label": "2 GPUs, ZeRO-1",
+      "model": "llama8",
+      "gpu": "rtx4090",
+      "cfg": {
+        "ftMethod": "full",
+        "runtime": "hf",
+        "gpus": 2,
+        "zero": "1",
+        "batch": 2
+      },
+      "gib": 84.5
+    },
+    {
+      "group": "ZeRO, full fine-tune Llama 3.1 8B, data parallel on RTX 4090 (PCIe 4.0)",
+      "mode": "training",
+      "label": "4 GPUs, ZeRO-1",
+      "model": "llama8",
+      "gpu": "rtx4090",
+      "cfg": {
+        "ftMethod": "full",
+        "runtime": "hf",
+        "gpus": 4,
+        "zero": "1",
+        "batch": 4
+      },
+      "gib": 62.2
+    },
+    {
+      "group": "ZeRO, full fine-tune Llama 3.1 8B, data parallel on RTX 4090 (PCIe 4.0)",
+      "mode": "training",
+      "label": "8 GPUs, ZeRO-1",
+      "model": "llama8",
+      "gpu": "rtx4090",
+      "cfg": {
+        "ftMethod": "full",
+        "runtime": "hf",
+        "gpus": 8,
+        "zero": "1",
+        "batch": 8
+      },
+      "gib": 51.2
+    },
+    {
+      "group": "ZeRO, full fine-tune Llama 3.1 8B, data parallel on RTX 4090 (PCIe 4.0)",
+      "mode": "training",
+      "label": "8 GPUs, ZeRO-0 (no sharding)",
+      "model": "llama8",
+      "gpu": "rtx4090",
+      "cfg": {
+        "ftMethod": "full",
+        "runtime": "hf",
+        "gpus": 8,
+        "zero": "0",
+        "batch": 8
+      },
+      "gib": 129.4
+    },
+    {
+      "group": "ZeRO, full fine-tune Llama 3.1 8B on H100 80GB (PCIe 4.0)",
+      "mode": "training",
+      "label": "4 GPUs, ZeRO-1",
+      "model": "llama8",
+      "gpu": "h100_sxm",
+      "cfg": {
+        "ftMethod": "full",
+        "runtime": "hf",
+        "gpus": 4,
+        "zero": "1",
+        "batch": 4
+      },
+      "gib": 62.2,
+      "train_tps": 7440
+    },
+    {
+      "group": "ZeRO, full fine-tune Llama 3.1 8B on H100 80GB (PCIe 4.0)",
+      "mode": "training",
+      "label": "8 GPUs, ZeRO-1",
+      "model": "llama8",
+      "gpu": "h100_sxm",
+      "cfg": {
+        "ftMethod": "full",
+        "runtime": "hf",
+        "gpus": 8,
+        "zero": "1",
+        "batch": 8
+      },
+      "gib": 51.2,
+      "train_tps": 8473
+    }
   ]
 }

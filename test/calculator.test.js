@@ -27,6 +27,8 @@ function config(overrides = {}) {
     gpusPerNode: 8,
     interconnectGBs: 64,
     interNodeGBs: 12.5,
+    trainingMfu: 0.42,
+    trainingBatchSaturation: 0.52,
     precision: 'fp16',
     kvPrecision: 'fp16',
     ftMethod: 'full',
@@ -287,13 +289,40 @@ test('training: QLoRA uses 4.35-bit base weights and a far smaller trainable set
   assert.ok(q['Optimizer states'] < 1);
 });
 
-test('training: checkpointing and flash attention reduce saved activations', () => {
+test('training: checkpointing keeps layer inputs only, flash attention shrinks the working set', () => {
   const base = run({ flash: false }, 'training').components_gib['Saved activations'];
   assert.ok(run({ flash: true }, 'training').components_gib['Saved activations'] < base);
-  near(run({ flash: false, checkpoint: true }, 'training').components_gib['Saved activations'], base * 0.4);
+  const ckpt = run({ flash: false, checkpoint: true }, 'training').components_gib['Saved activations'];
+  // 4,096 tokens x 32 layers x 4096 x 2 B (layer inputs only)
+  near(ckpt, (4096 * 32 * 4096 * 2) / GiB);
+  assert.ok(ckpt < base * 0.15);
 });
 
 // Llama 3.1 8B fine-tuning on one H100 80GB, 1,024 tokens (apxml.com/tools/vram-calculator, calibrated).
+test('regression vs ApX live calculator (fine-tuning on other GPUs, ZeRO)', () => {
+  const dc = (k) => ({ ...GPU_PRESETS[k], reserve: 0, runtime: 'hf', sequence: 1024 });
+  const a100 = { ...dc('a100'), vram: 40, bandwidth: 1555 };
+  for (const [batch, gb, tps] of [[1, 13.5, 3034], [2, 19.5, 3338], [4, 31.5, 3513]]) {
+    const r = run({ ...a100, ftMethod: 'qlora', batch }, 'training');
+    assert.ok(Math.abs(r.required_gib_per_gpu / gb - 1) <= 0.08, `A100 b${batch}: ${r.required_gib_per_gpu}`);
+    assert.ok(Math.abs(r.performance.training_tps / tps - 1) <= 0.05, `A100 b${batch}: ${r.performance.training_tps}`);
+  }
+  const g4090 = { ...dc('4090'), checkpoint: true, ftMethod: 'qlora' };
+  for (const [batch, gb, tps] of [[1, 7.2, 2292], [2, 7.4, 2574]]) {
+    const r = run({ ...g4090, batch }, 'training');
+    assert.ok(Math.abs(r.required_gib_per_gpu / gb - 1) <= 0.1, `4090 b${batch}: ${r.required_gib_per_gpu}`);
+    assert.ok(Math.abs(r.performance.training_tps / tps - 1) <= 0.05, `4090 b${batch}: ${r.performance.training_tps}`);
+  }
+  // ZeRO-1 shards only the 12 B/param optimizer states across data-parallel replicas.
+  const z = (gpus, zero) => run({ ...dc('4090'), ftMethod: 'full', gpus, zero, batch: gpus }, 'training').required_gib_per_gpu;
+  for (const [gpus, gb] of [[2, 84.5], [4, 62.2], [8, 51.2]]) assert.ok(Math.abs(z(gpus, '1') / gb - 1) <= 0.08, `ZeRO-1 x${gpus}: ${z(gpus, '1')}`);
+  assert.ok(Math.abs(z(8, '0') / 129.4 - 1) <= 0.05);
+  // Multi-GPU full fine-tune speed is dominated by the PCIe gradient exchange.
+  const h = (gpus) => run({ ...dc('h100'), tflops: 989.5, ftMethod: 'full', gpus, zero: '1', batch: gpus }, 'training').performance.training_tps;
+  assert.ok(Math.abs(h(4) / 7440 - 1) <= 0.08, `H100 x4 ${h(4)}`);
+  assert.ok(Math.abs(h(8) / 8473 - 1) <= 0.08, `H100 x8 ${h(8)}`);
+});
+
 test('regression vs ApX live calculator (fine-tuning)', () => {
   const h100 = { ...GPU_PRESETS.h100, tflops: 989.5, reserve: 0, runtime: 'hf' };
   const rows = [
